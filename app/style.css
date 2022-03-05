@@ -39,3 +39,12 @@ body{
     justify-content: space-between;
     padding: 1em;
 }
+
+.task_done{
+    /* 텍스트에 라인을 긋는 속성 */
+    text-decoration: line-through; 
+}
+
+#task_done{
+    background-color: rgb(48, 193, 212);
+}
