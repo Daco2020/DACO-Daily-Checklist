@@ -9,25 +9,52 @@
 // 완료탭은 완료 아이템만, 진행중 탭은 진행중인 아이템만 노출한다.
 // 전체 탭을 누르면 전체 아이템을 노출한다.
 
-
+let underLine = document.getElementById("under_line");
 let taskInput = document.getElementById("task_input") // 입력 값을 가져온다.
 let addButton = document.getElementById("add") // 버튼을 가져온다.
+let tabs = document.querySelectorAll(".task_tabs div") // task_tabs클래스의 디브를 모두 가져온다.
 let taskList = [] // 태스크를 담을 빈 배열을 만든다.
-addButton.addEventListener("click",addTask) // 버튼이 클릭당하면 addTask함수를 실행한다.
+let mode = "all" // 먼저 all 을 할당해야 render 함수에서 캐치할 수 있다
+let filterList = []
 
+addButton.addEventListener("mousedown", function () {
+    addTask();
+    taskInput.value="";
+}); // 버튼을 클릭하면 addTask함수를 실행한다.
+taskInput.addEventListener("keyup", function (event) { // 해당 키코드를 치면 함수를 실행한다.
+    if (event.keyCode === 13) {
+        addTask(event); // 엔터치면 에드테스크 함수를 호출함
+        taskInput.value="";  // 엔터치면 인풋창의 값을 삭제해줌
+    }
+});
 
+for(let i=1;i<tabs.length;i++){
+    tabs[i].addEventListener("click", function(event){
+        filter(event)}) // 이벤트는 모든 이벤트를 의미함
+}
 
 // 입력 값을 taskContent 변수에 담는다.
 // taskContent를 taskList에 담는다.
 // render 함수를 실행한다.
 function addTask(){
+    let value = taskInput.value
+    if (!value) {
+        console.log("값이 없습니다")
+        return 
+    }
+    for(let i=0;i<taskList.length;i++){
+        if(taskList[i].taskContent == value){
+            console.log("이미 값이 있습니다")
+            return
+        }
+    }
     let task = {
         id : randomIdGenerate(), // item에는 id가 있어야 추후 핸들링할 수 있다.
-        taskContent: taskInput.value,
+        taskContent: value,
         isComplete: false
     }
     taskList.push(task)
-    render();
+    filter()
     
 }
 
@@ -35,17 +62,18 @@ function addTask(){
 // resultHtml 을 미리 선언한다.
 // for를 이용해 taskList 배멸 길이 만큼 반복하면서 taskList 요소들을 html에 넣는다.
 function render(){
-    console.log(taskList)
+    let list = filterList
+    
     let resultHtml = ''
-    for(let i=0;i<taskList.length;i++){
-        if(taskList[i].isComplete == true){
+    for(let i=0;i<list.length;i++){
+        if(list[i].isComplete == true){
 
-            // taskList[i].isComplete 가 true라면 완료가 된 항목이기 때문에 요소에 줄을 긋는다.
+            // list[i].isComplete 가 true라면 완료가 된 항목이기 때문에 요소에 줄을 긋는다.
             resultHtml += `<div class="task" id="task_done">
-            <div class='task_done'>${taskList[i].taskContent}</div>
+            <div class='task_done'>${list[i].taskContent}</div>
             <div> 
-                <button onclick="toggleComplete('${taskList[i].id}')">check</button> 
-                <button onclick="deleteTask('${taskList[i].id}')">delete</button>
+                <button onclick="toggleComplete('${list[i].id}')">check</button> 
+                <button onclick="deleteTask('${list[i].id}')">delete</button>
             </div>
             </div>`;
 
@@ -54,10 +82,10 @@ function render(){
         // onclick="toggleComplete()" -> html 이벤트는 여기서 바로 적용할 수 있다.
         // 함수 안에 '${}' 로 인자를 넣을 수 있다.
             resultHtml += `<div class="task">
-            <div>${taskList[i].taskContent}</div>
+            <div>${list[i].taskContent}</div>
             <div> 
-                <button onclick="toggleComplete('${taskList[i].id}')">check</button> 
-                <button onclick="deleteTask('${taskList[i].id}')">delete</button>
+                <button onclick="toggleComplete('${list[i].id}')">check</button> 
+                <button onclick="deleteTask('${list[i].id}')">delete</button>
             </div>
             </div>`;
         }
@@ -76,17 +104,51 @@ function toggleComplete(id) {
             break;
         }
     }
-    render();
+    filter();
 }
 
 function deleteTask(id){
     for(let i=0; i<taskList.length;i++){
         if(taskList[i].id == id){
-            taskList.splice(i,i+1)
+            taskList.splice(i,1)
             break;
         }
     }
-    render(); // 값을 수정하면 html 도 업데이트 해주어야 한다.
+    filter(); // 값을 수정하면 html 도 업데이트 해주어야 한다.
+}
+
+function filter(event){
+    // console.log(event.target) 이벤트 타겟은 이벤트된 타겟, 여기서는 div의 모든 값을 가져온다. ex :: <div id="ongoing">진행중</div>
+    
+    
+    // 메뉴 슬라이드바 코드
+    if (event) {
+        mode = event.target.id
+        underLine.style.width = event.target.offsetWidth + "px";
+        underLine.style.left = event.target.offsetLeft + "px";
+        underLine.style.top = event.target.offsetTop + event.target.offsetHeight + "px";
+    }
+    
+    // 메뉴별 이벤트 핸들링
+    filterList = []
+    if(mode == "all"){
+        filterList = taskList
+        render()
+    }else if(mode == "ongoing"){
+        for(let i=0;i<taskList.length;i++){
+            if(taskList[i].isComplete == false){
+                filterList.push(taskList[i])
+            }
+        }
+        render()
+    }else if(mode == "done"){
+        for(let i=0;i<taskList.length;i++){
+            if(taskList[i].isComplete == true){
+                filterList.push(taskList[i])
+            }
+        }
+        render()
+    }
 }
 
 function randomIdGenerate(){
